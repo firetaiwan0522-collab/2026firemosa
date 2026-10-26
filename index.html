@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>火神祭｜人氣投票</title>
+<meta name="theme-color" content="#0c0807">
+<style>
+  :root {
+    /* 版面：夜空下的一張選票。主視覺在上，3×3 號次選票，選中的那組燃起來，投票鈕固定在底部。 */
+    --ink: #0c0807;
+    --char: #17100c;
+    --char-2: #221710;
+    --bone: #f7efe8;
+    --ash: #b5a294;
+    --smoke: #8a776c;
+    --ember: #ff5a24;
+    --flare: #ff8c3a;
+    --gold: #ffc66e;
+    --line: rgba(255, 232, 214, .10);
+    --line-2: rgba(255, 232, 214, .18);
+    --display: "Noto Serif TC", "Songti TC", "Noto Serif CJK TC", "PMingLiU", serif;
+    --body: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Segoe UI", sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--ink);
+    background-image:
+      radial-gradient(130% 55% at 50% -12%, rgba(255, 90, 36, .26), transparent 62%),
+      radial-gradient(90% 40% at 50% 112%, rgba(255, 140, 58, .10), transparent 70%);
+    background-repeat: no-repeat;
+    color: var(--bone);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+  button { font: inherit; color: inherit; }
+
+  /* 頂部 logo */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    background: rgba(12, 8, 7, .78);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar img { display: block; height: 26px; width: auto; }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 16px max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
+  }
+
+  /* 主視覺 */
+  .hero {
+    margin: 0;
+    aspect-ratio: 1600 / 609;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--char);
+    box-shadow: 0 0 0 1px var(--line), 0 24px 60px -24px rgba(255, 90, 36, .55);
+  }
+  .hero img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  /* 標題 */
+  .intro { text-align: center; padding: 26px 0 4px; }
+  .eyebrow {
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .26em;
+    color: var(--flare);
+  }
+  .title {
+    margin: 0;
+    padding-left: .14em;
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: clamp(36px, 10.5vw, 54px);
+    line-height: 1.12;
+    letter-spacing: .14em;
+    color: var(--bone);
+    background: linear-gradient(180deg, #fff8f0 35%, #ffc18a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 22px rgba(255, 106, 40, .35));
+  }
+  .subtitle { margin: 10px 0 0; color: var(--ash); font-size: 15px; }
+  .rules {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  .rules li {
+    font-size: 12.5px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line-2);
+    background: rgba(255, 232, 214, .04);
+  }
+  .notice {
+    margin: 18px 0 0;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(255, 90, 36, .12);
+    border: 1px solid rgba(255, 90, 36, .38);
+    color: #ffd8c2;
+    font-size: 14px;
+    line-height: 1.65;
+    text-align: center;
+  }
+
+  /* 選票：3×3，每組一樣大 */
+  .grid {
+    list-style: none;
+    margin: 20px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  @media (min-width: 560px) { .grid { gap: 14px; } }
+  .grid li { display: flex; min-width: 0; }
+  .card {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    background: var(--char);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px var(--line);
+    transition: transform .15s ease, box-shadow .2s ease, filter .25s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .card:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .card:active { transform: scale(.97); }
+  .media {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    background: var(--char-2);
+    overflow: hidden;
+  }
+  .media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .35s ease;
+  }
+  .num {
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 999px;
+    display: inline-grid;
+    place-items: center;
+    font: 800 12px/1 var(--body);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    background: var(--bone);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .45);
+  }
+  .tick {
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--ember);
+    box-shadow: 0 4px 14px rgba(255, 90, 36, .65);
+    transform: scale(0);
+    transition: transform .22s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  .tick svg, .seal svg {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .tick svg { width: 16px; height: 16px; }
+  .name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    min-height: calc(2.6em + 18px);
+    padding: 8px 6px 10px;
+    font-weight: 700;
+    font-size: clamp(12px, 3.4vw, 15px);
+    line-height: 1.3;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .grid.has-pick .card:not([aria-pressed="true"]) { filter: saturate(.5) brightness(.72); }
+  .card[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ember), 0 14px 34px -10px rgba(255, 90, 36, .7); }
+  .card[aria-pressed="true"] .tick { transform: scale(1); }
+  .card[aria-pressed="true"] .media img { transform: scale(1.06); }
+  .card[aria-pressed="true"] .name { color: var(--gold); }
+  .card[aria-pressed="true"] .num { color: #fff; background: var(--ember); }
+  .grid.locked .card { cursor: default; filter: saturate(.6) brightness(.8); }
+  .grid.locked .card:active { transform: none; }
+
+  /* 底部投票列 */
+  .bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    margin-top: 22px;
+    padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    background: rgba(12, 8, 7, .88);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line);
+  }
+  .bar-inner { max-width: 688px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .pick { flex: 1; min-width: 0; }
+  .pick small { display: block; font-size: 12px; color: var(--smoke); }
+  .pick strong { display: block; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .btn {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 0;
+    cursor: pointer;
+    height: 50px;
+    padding: 0 28px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    color: #fff;
+    background: linear-gradient(180deg, var(--flare), var(--ember));
+    box-shadow: 0 10px 26px -8px rgba(255, 90, 36, .85), inset 0 1px 0 rgba(255, 255, 255, .25);
+    transition: transform .12s ease, filter .2s ease;
+  }
+  .btn:active:not(:disabled) { transform: scale(.97); }
+  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .btn:disabled { cursor: not-allowed; color: var(--smoke); background: #2c211a; box-shadow: none; }
+  .btn-ghost { color: var(--bone); background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); }
+  .btn-ghost:disabled { background: transparent; }
+
+  /* 確認視窗 */
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(6, 4, 3, .66);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .2s ease, visibility .2s;
+  }
+  .modal.show { opacity: 1; visibility: visible; }
+  .sheet {
+    width: 100%;
+    max-width: 480px;
+    background: var(--char);
+    border-top: 1px solid var(--line-2);
+    border-radius: 22px 22px 0 0;
+    padding: 18px max(18px, env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+    box-shadow: 0 -16px 50px rgba(0, 0, 0, .55);
+    transform: translateY(28px);
+    transition: transform .26s cubic-bezier(.2, .8, .2, 1);
+  }
+  .modal.show .sheet { transform: none; }
+  @media (min-width: 600px) {
+    .modal { align-items: center; }
+    .sheet { border-radius: 22px; border: 1px solid var(--line-2); }
+  }
+  .sheet img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 14px;
+    background: var(--char-2);
+  }
+  .confirm-kicker {
+    margin: 16px 0 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: .12em;
+    color: var(--ash);
+  }
+  .confirm-name {
+    margin: 6px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+  .confirm-name .num, .voted .num { position: static; flex: none; }
+  .confirm-note { margin: 10px 0 0; font-size: 13.5px; color: var(--ash); }
+  .actions { display: flex; gap: 10px; margin-top: 18px; }
+  .actions .btn { flex: 1; padding: 0 12px; }
+
+  /* 投票完成 */
+  .done { text-align: center; padding: 34px 0 12px; }
+  .seal {
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle, rgba(255, 140, 58, .38), transparent 68%);
+  }
+  .seal span {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(180deg, var(--flare), var(--ember));
+    box-shadow: 0 0 0 8px rgba(255, 90, 36, .16), 0 12px 30px rgba(255, 90, 36, .6);
+  }
+  .seal svg { width: 28px; height: 28px; }
+  .done.fresh .seal span { animation: pop .5s cubic-bezier(.34, 1.56, .64, 1) both; }
+  @keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+  .done h2 {
+    margin: 0;
+    padding-left: .1em;
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 30px;
+    letter-spacing: .1em;
+  }
+  .done-lead { margin: 10px 0 0; color: var(--ash); }
+  .voted {
+    margin: 18px auto 0;
+    max-width: 300px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--char);
+    box-shadow: 0 0 0 2px var(--ember), 0 24px 50px -16px rgba(255, 90, 36, .65);
+  }
+  .voted img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: var(--char-2); }
+  .voted figcaption {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 14px 14px;
+    font-size: 19px;
+    font-weight: 800;
+  }
+  .thanks { margin: 22px 0 0; color: var(--smoke); font-size: 14px; }
+
+  .foot {
+    text-align: center;
+    color: var(--smoke);
+    font-size: 12px;
+    line-height: 1.8;
+    padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    z-index: 60;
+    max-width: calc(100% - 32px);
+    padding: 11px 16px;
+    border-radius: 12px;
+    background: #2b1f18;
+    color: var(--bone);
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: center;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .5), 0 0 0 1px var(--line-2);
+    opacity: 0;
+    transform: translate(-50%, 16px);
+    transition: opacity .25s, transform .25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .spin {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .35);
+    border-top-color: #fff;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <header class="topbar"><img id="logo" alt="火神祭 FIREMOSA"></header>
+
+  <main class="wrap">
+    <figure class="hero"><img id="hero" alt="2026 國際火舞藝術節主視覺"></figure>
+
+    <section id="ballot">
+      <div class="intro">
+        <p class="eyebrow" id="eyebrow"></p>
+        <h1 class="title" id="title"></h1>
+        <p class="subtitle" id="subtitle"></p>
+        <ul class="rules">
+          <li id="ruleOne"></li>
+          <li>送出後無法更改</li>
+        </ul>
+      </div>
+      <p class="notice" id="notice" hidden></p>
+      <ul class="grid" id="grid" aria-label="參賽隊伍"></ul>
+    </section>
+
+    <section class="done" id="done" hidden>
+      <div class="seal" aria-hidden="true"><span><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"/></svg></span></div>
+      <h2 id="doneTitle">投票成功</h2>
+      <p class="done-lead" id="doneLead">你投給了</p>
+      <figure class="voted" id="doneCard">
+        <img id="doneImg" alt="">
+        <figcaption><span class="num" id="doneNum"></span><span id="doneName"></span></figcaption>
+      </figure>
+      <p class="thanks">謝謝你參與 2026 火神祭</p>
+    </section>
+  </main>
+
+  <div class="bar" id="bar">
+    <div class="bar-inner">
+      <div class="pick">
+        <small id="pickLabel">確認投票資格中…</small>
+        <strong id="pickName">請點選一組</strong>
+      </div>
+      <button type="button" class="btn" id="voteBtn" disabled>投票</button>
+    </div>
+  </div>
+
+  <footer class="foot">只記錄匿名代碼，不會取得你的 Email 或其他個人資料<br>© 2026 火神祭 FIREMOSA</footer>
+
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <img id="confirmImg" alt="">
+      <p class="confirm-kicker" id="confirmTitle">確定投給</p>
+      <p class="confirm-name"><span class="num" id="confirmNum"></span><span id="confirmName"></span></p>
+      <p class="confirm-note">每人只能投一次，送出後無法更改。</p>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" id="cancelBtn">再想想</button>
+        <button type="button" class="btn" id="confirmBtn">確定投票</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// 記票用的 Apps Script 網址（部署後的 /exec 網址）
+const API_URL = 'https://script.google.com/macros/s/AKfycbz21g-vytk0mKXANd_NbRNZmfMUhiJR7kKv8CESxSEfH6vulzIGH_IuyJ34TltKbgYLfQ/exec';
+const BOOT = {"config":{"eyebrow":"2026 火神祭 FIREMOSA","title":"人氣投票","subtitle":"選出你心中最燃的演出","logoId":"13tMJCt7h5ph3TDDynNavuaVh0jmCW0yV","heroId":"1O7vY9ac2ZlkGwd6x1l8lcLSz7dfcA1Oy","requireGoogleLogin":false},"teams":[{"id":1,"name":"Firechill","img":"1494HLomcsNvgTgjhZUInsMR64efDhPFu","pos":"50% 30%"},{"id":2,"name":"Attila Oltyan","img":"1BvqSDPRlzxEWdygYBsYeOFncaL4hbXNo","pos":"40% 50%"},{"id":3,"name":"K-Fire","img":"1HlmqlDG4R4mD1YVr6cS_JMjM7UCEI19f","pos":"50% 50%"},{"id":4,"name":"Cristian on Fire","img":"11iZfpNZP5vGOOpb41oRB9GsuKvBLTE3O","pos":"50% 35%"},{"id":5,"name":"雷光炎舞 KAGUZUCHI","img":"1NKtS80Cde_1UiQmPOyRnG9B4dOnoNd23","pos":"50% 50%"},{"id":6,"name":"披薩","img":"1ZZNz3k4uZhWH03jbvKg4gUshkxB4Y14Y","pos":"50% 55%"},{"id":7,"name":"KMF高雄極限火舞團","img":"1rnyBr_-dsKOqvTJEKVtOR8NYv9V7apyL","pos":"50% 50%"},{"id":8,"name":"微光小太陽","img":"1kLx2SDBXouCASk8CDpW6HPWz8iUsqRgX","pos":"45% 50%"},{"id":9,"name":"Justyce Levi Uepa","img":"1NAycNVSxMFoJjtrSW2KcVx_6aUA6QgBj","pos":"55% 50%"}]};
+
+(function () {
+  'use strict';
+  const config = BOOT.config;
+  const teams = BOOT.teams;
+  const $ = id => document.getElementById(id);
+  const byId = new Map(teams.map((t, i) => [t.id, Object.assign({ no: i + 1 }, t)]));
+
+  let phase = 'loading'; // loading | ready | closed | nologin | done
+  let selected = 0;
+  let busy = false;
+
+  /* 圖片：先走 lh3（快），失敗再換 Drive 縮圖網址 */
+  function setImg(el, fileId, width) {
+    el.referrerPolicy = 'no-referrer';
+    el.decoding = 'async';
+    el.onerror = function () {
+      el.onerror = null;
+      el.src = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w' + width;
+    };
+    el.src = 'https://lh3.googleusercontent.com/d/' + fileId + '=w' + width;
+  }
+
+  /* 標題用的襯線字只下載用到的字 */
+  function loadDisplayFont() {
+    const text = config.title + '確定投給投票成功你已經投過票了';
+    const glyphs = Array.from(new Set(Array.from(text))).join('');
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap&text=' + encodeURIComponent(glyphs);
+    document.head.appendChild(link);
+  }
+
+  /* 英文接中文的地方允許換行，例如「KMF／高雄極限火舞團」 */
+  const breakable = s => s.replace(/([A-Za-z0-9])(?=[\u3400-\u9fff])/g, '$1\u200b');
+
+  function buildGrid() {
+    const grid = $('grid');
+    teams.forEach((t, i) => {
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'card';
+      btn.dataset.id = t.id;
+      btn.setAttribute('aria-pressed', 'false');
+      btn.setAttribute('aria-label', (i + 1) + ' 號 ' + t.name);
+      btn.innerHTML =
+        '<span class="media"><img alt=""><span class="num"></span>' +
+        '<span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"/></svg></span></span>' +
+        '<span class="name"></span>';
+      btn.querySelector('.num').textContent = i + 1;
+      btn.querySelector('.name').textContent = breakable(t.name);
+      const img = btn.querySelector('img');
+      img.style.objectPosition = t.pos || '50% 50%';
+      setImg(img, t.img, 480);
+      btn.addEventListener('click', () => choose(t.id));
+      li.appendChild(btn);
+      grid.appendChild(li);
+    });
+  }
+
+  function choose(id) {
+    if (busy || phase === 'done' || phase === 'closed') return;
+    selected = id;
+    render();
+  }
+
+  function render() {
+    const grid = $('grid');
+    grid.classList.toggle('has-pick', selected > 0);
+    grid.classList.toggle('locked', phase === 'closed');
+    grid.querySelectorAll('.card').forEach(btn => {
+      btn.setAttribute('aria-pressed', String(Number(btn.dataset.id) === selected));
+    });
+    const team = byId.get(selected);
+    const labels = { loading: '確認投票資格中…', ready: '你的選擇', nologin: '需要登入 Google' };
+    $('pickLabel').textContent = labels[phase] || '';
+    $('pickName').textContent = team ? team.name : '請點選一組';
+    $('voteBtn').disabled = !(phase === 'ready' && team);
+    $('bar').hidden = phase === 'done' || phase === 'closed';
+  }
+
+  function showNotice(text) {
+    $('notice').textContent = text || '';
+    $('notice').hidden = !text;
+  }
+
+  const inAppBrowser = () => /Line\/|FBAN|FBAV|Instagram|Messenger|MicroMessenger|Threads/i.test(navigator.userAgent);
+
+  function setPhase(next, message) {
+    phase = next;
+    if (next === 'closed') {
+      showNotice(message || '投票目前沒有開放');
+    } else if (next === 'nologin') {
+      showNotice(inAppBrowser()
+        ? '這個 App 的內建瀏覽器無法登入 Google。請點右上角選單，選「用瀏覽器開啟」再投票。'
+        : '請先登入 Google 帳號再投票，每個帳號限投一票。');
+    } else {
+      showNotice('');
+    }
+    render();
+  }
+
+  function showDone(teamId, fresh) {
+    const team = byId.get(Number(teamId));
+    phase = 'done';
+    $('ballot').hidden = true;
+    $('done').hidden = false;
+    $('done').classList.toggle('fresh', fresh);
+    $('doneTitle').textContent = fresh ? '投票成功' : '你已經投過票了';
+    $('doneLead').textContent = fresh ? '你投給了' : '每人只能投一次，你投給了';
+    $('doneCard').hidden = !team;
+    if (team) {
+      $('doneNum').textContent = team.no;
+      $('doneName').textContent = team.name;
+      $('doneImg').style.objectPosition = team.pos || '50% 50%';
+      setImg($('doneImg'), team.img, 800);
+    }
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function openConfirm() {
+    const team = byId.get(selected);
+    if (!team || phase !== 'ready') return;
+    $('confirmNum').textContent = team.no;
+    $('confirmName').textContent = team.name;
+    $('confirmImg').style.objectPosition = team.pos || '50% 50%';
+    setImg($('confirmImg'), team.img, 800);
+    $('modal').classList.add('show');
+    $('modal').setAttribute('aria-hidden', 'false');
+    $('confirmBtn').focus();
+  }
+
+  function closeConfirm() {
+    if (busy || !$('modal').classList.contains('show')) return;
+    $('modal').classList.remove('show');
+    $('modal').setAttribute('aria-hidden', 'true');
+    if (phase === 'ready') $('voteBtn').focus();
+  }
+
+  function setSubmitting(on) {
+    busy = on;
+    $('cancelBtn').disabled = on;
+    $('confirmBtn').disabled = on;
+    $('confirmBtn').innerHTML = on ? '<span class="spin" aria-hidden="true"></span>送出中' : '確定投票';
+  }
+
+  let toastTimer = 0;
+  function toast(text) {
+    $('toast').textContent = text;
+    $('toast').classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $('toast').classList.remove('show'), 4000);
+  }
+
+  /* 免登入模式：這支手機的隨機代碼。瀏覽器不讓存資料（無痕模式、封鎖 Cookie）時，
+     改用這次開頁的暫時代碼，確保每個人都投得了票。 */
+  const newDeviceId = () => (window.crypto && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
+  let pageDeviceId = '';
+  function deviceId() {
+    if (config.requireGoogleLogin) return '';
+    try {
+      let id = localStorage.getItem('firemosa-vote-device');
+      if (!id) {
+        id = newDeviceId();
+        localStorage.setItem('firemosa-vote-device', id);
+      }
+      return id;
+    } catch (e) {
+      if (!pageDeviceId) pageDeviceId = newDeviceId();
+      return pageDeviceId;
+    }
+  }
+
+  /* 呼叫 Apps Script 記票。credentials: 'omit' 讓請求不帶 Google 帳號的 Cookie，
+     手機登入什麼帳號都不影響。 */
+  function call(action, payload) {
+    return fetch(API_URL, {
+      method: 'POST',
+      credentials: 'omit',
+      cache: 'no-store',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ action: action }, payload)),
+    }).then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+  }
+
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  async function submit() {
+    if (busy) return;
+    const teamId = selected;
+    setSubmitting(true);
+    let res = null;
+    let hadNetworkError = false;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt > 0) await sleep(600 * Math.pow(2, attempt) + Math.random() * 500);
+      try {
+        res = await call('vote', { teamId: teamId, deviceId: deviceId() });
+        if (res && res.code !== 'BUSY') break;
+      } catch (err) {
+        res = null;
+        hadNetworkError = true;
+      }
+    }
+    setSubmitting(false);
+    closeConfirm();
+
+    if (res && res.ok) return showDone(res.votedTeamId, true);
+    if (res && res.code === 'ALREADY') {
+      // 上一次其實已送達、只是回應斷線：當作這次投票成功
+      return showDone(res.votedTeamId, hadNetworkError && res.votedTeamId === teamId);
+    }
+    if (res && res.code === 'CLOSED') return setPhase('closed', res.message);
+    if (res && res.code === 'NO_LOGIN') return setPhase('nologin');
+    toast(res && res.message
+      ? res.message
+      : '票還沒送出，請確認網路後再按一次。');
+  }
+
+  /* 啟動 */
+  loadDisplayFont();
+  $('eyebrow').textContent = config.eyebrow;
+  $('title').textContent = config.title;
+  $('subtitle').textContent = config.subtitle;
+  $('ruleOne').textContent = config.requireGoogleLogin ? '每個 Google 帳號限投一票' : '每支手機限投一票';
+  setImg($('logo'), config.logoId, 400);
+  setImg($('hero'), config.heroId, 1200);
+  buildGrid();
+
+  $('voteBtn').addEventListener('click', openConfirm);
+  $('cancelBtn').addEventListener('click', closeConfirm);
+  $('confirmBtn').addEventListener('click', submit);
+  $('modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfirm(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeConfirm(); });
+
+  render();
+  call('status', { deviceId: deviceId() })
+    .then(s => {
+      if (s.votedTeamId) return showDone(s.votedTeamId, false);
+      if (!s.canVote) return setPhase('nologin');
+      if (!s.open) return setPhase('closed', s.message);
+      setPhase('ready');
+    })
+    .catch(() => setPhase('ready'));
+})();
+</script>
+</body>
+</html>
